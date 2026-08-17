@@ -31,19 +31,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Mobile menu ----------
   const menuToggle = document.getElementById('menuToggle');
   const mobileNav = document.getElementById('mobileNav');
-  const toggleMenu = () => {
-    const isActive = menuToggle.classList.toggle('active');
+
+  const setMenu = (isActive) => {
+    menuToggle.classList.toggle('active', isActive);
     mobileNav.classList.toggle('active', isActive);
+    // o painel aberto é escuro: o header precisa voltar ao estado claro
+    header.classList.toggle('menu-open', isActive);
     menuToggle.setAttribute('aria-expanded', String(isActive));
     document.body.style.overflow = isActive ? 'hidden' : '';
   };
-  menuToggle.addEventListener('click', toggleMenu);
-  mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    menuToggle.classList.remove('active');
-    mobileNav.classList.remove('active');
-    menuToggle.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
-  }));
+
+  menuToggle.addEventListener('click', () => setMenu(!mobileNav.classList.contains('active')));
+  mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileNav.classList.contains('active')) setMenu(false);
+  });
+
+  // ---------- Scrollspy: marca a seção visível na navegação ----------
+  const navLinks = Array.from(document.querySelectorAll('.nav a[href^="#"]'));
+  const sections = navLinks
+    .map(link => document.querySelector(link.getAttribute('href')))
+    .filter(Boolean);
+
+  if (sections.length) {
+    const spy = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach(l => l.classList.toggle('is-active', l.getAttribute('href') === '#' + entry.target.id));
+      });
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+    sections.forEach(s => spy.observe(s));
+  }
 
   // ---------- Smooth scroll with fixed-header offset ----------
   const getHeaderOffset = () => header.offsetHeight + 16;
